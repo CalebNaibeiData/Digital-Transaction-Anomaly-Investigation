@@ -1,31 +1,54 @@
-# Digital Transaction Anomaly Investigation
+# Digital Transaction Forensics & Fraud Investigation Platform
 
-**Forensic investigation portfolio | Synthetic mobile-money transaction data**
+**Portfolio by Caleb Naibei | SQL • Python • Digital evidence analysis**
 
-A reproducible case study demonstrating SQL-based transaction review, Python anomaly detection, SHA-256 evidence integrity checks, investigative reporting, and chain-of-custody documentation.
+A reproducible, evidence-led **simulation** of digital transaction investigations. It correlates authentication events with transfers, traces time-respecting transaction paths, validates data quality, and produces hashed evidence inventories and auditable exhibits.
 
-**Case ID:** SIM-2026-001. All account IDs and transactions are fictional. A flagged pattern is **not proof of fraud**.
+> **Ethics:** All records are fictional. Anomaly flags, shared device labels and transfer paths are **not evidence of criminal guilt**. No real customer data or real chain of custody is claimed.
 
-## Run
-Requires Python 3.9+; no third-party packages.
+## Featured investigation — SIM-2026-002
+**Scenario:** A hypothetical account-access complaint followed by rapid transfers, onward movements through intermediaries, and a legitimate payroll-like counterexample.
 
+**Sources:** `accounts.csv`, `auth_events.csv`, `transactions.csv` (generated deterministically).
+
+**Investigation workflow:** source generation → validation → SHA-256 manifest → SQL exhibits → authentication correlation → temporal transaction graph → timeline → evidence-linked case findings.
+
+**Read the detailed case study:** [SIM-2026-002 investigation](docs/CASE_002_INVESTIGATION.md).
+
+## Run in VS Code (Python 3.9+; no external dependencies)
 ```bash
-python src/investigate.py
+python src/forensic_pipeline.py
 python -m unittest discover -s tests -v
 ```
+Windows alternative: use `py` instead of `python`.
 
-Review `reports/case_report.md`, `reports/flags.json`, `reports/sql_results.json`, and `reports/flagged_transactions.csv` in Excel.
+**Review generated exhibits** in `reports/case_002/`:
+- `summary.json` — counts and validation outcome
+- `manifest.json` — source file hashes and byte sizes
+- `findings.json` — hypotheses linked to record identifiers
+- `paths.json` — directed, chronological transaction paths
+- `timeline.csv` — Excel-compatible event reconstruction
+- `sql_exhibits.json` — read-only query results
 
-## Investigation process
-1. Generate deterministic synthetic transaction records.
-2. Hash the source CSV with SHA-256 and document provenance.
-3. Run read-only SQLite queries from `sql/investigation.sql`.
-4. Apply transparent anomaly-detection rules.
-5. Export reproducible results and prepare a written case study.
-6. Use the custody template for a simulated exercise only.
+## Architecture
+```text
+Deterministic synthetic sources (3 CSVs)
+    ├── data-quality and referential checks
+    ├── SHA-256 evidence inventory
+    ├── SQLite read-only analytical exhibits
+    ├── login / device / transfer correlation
+    └── temporal transfer-graph traversal
+            ↓
+      JSON + CSV investigation exhibits
+            ↓
+      documented findings and limitations
+```
 
-## Caveats
-This is a training simulation, not a real investigation. SHA-256 establishes file consistency, not authenticity or an unbroken custody chain. Rule thresholds are illustrative and have not been validated on labeled fraud cases. Do not upload actual customer data.
+## Scope and caveats
+This is a training portfolio, not a production fraud detection system. There is no authentication to a real payments API, no customer PII, no calibrated fraud model, no real legal authorization and no true forensic acquisition. The graph demonstrates plausible transfer *paths*, not tracing of identical money units. A file hash checks consistency, not provenance.
 
-## Portfolio author
-Caleb Naibei — SQL, Python, database administration and systems security.
+## Legacy exercise
+The earlier, smaller demonstration remains available at `src/investigate.py` and `CASE_STUDY.md`; SIM-2026-002 is the featured, more detailed investigation.
+
+## Author
+Caleb Naibei — database administration, SQL analysis, Python automation and systems security.
