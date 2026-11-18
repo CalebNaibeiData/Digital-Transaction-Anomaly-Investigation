@@ -1,0 +1,8 @@
+account_id,type,risk_note
+A100,PERSONAL,reported access concern
+A200,PERSONAL,unknown
+A300,MERCHANT,legitimate payroll aggregator
+A400,PERSONAL,unknown
+A500,PERSONAL,unknown
+A600,PERSONAL,unknown
+A700,BUSINESS,scheduled supplier payments
