@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIM-2026-002 | Investigation Workbench</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#e7edf6;background:#0a1220}*{box-sizing:border-box}
+body{margin:0}header{padding:22px 30px;background:#101d31;border-bottom:1px solid #2a3a52;display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap}
+h1{font-size:24px;margin:3px 0}h2{font-size:17px;margin:0 0 14px}small,.muted{color:#a4b5c9}main{padding:24px;max-width:1600px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.panel,.metric{background:#132137;border:1px solid #293c58;border-radius:12px;padding:18px}
+.metric strong{font-size:27px;display:block;margin-top:10px}.layout{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:16px}
+input,select,button{background:#0b1728;color:#f0f5fc;border:1px solid #48607c;border-radius:7px;padding:10px;font:inherit}
+button{cursor:pointer;background:#1c507b}button:hover{background:#286795}label{display:block;font-size:12px;color:#b9c9d9;margin-bottom:6px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:18px 0}.controls>div{min-width:150px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #2a3a52;white-space:nowrap}th{color:#b8c9dc;position:sticky;top:0;background:#132137}
+.scroll{overflow:auto;max-height:390px}.tag{display:inline-block;padding:4px 7px;border-radius:6px;background:#28415e;color:#d5eaff}
+.warning{color:#f9cb81}.notice{border-left:3px solid #d7a350;padding:10px 14px;background:#2b281e;margin:18px 0;color:#f4d7a0}
+svg{width:100%;height:auto;max-height:380px}svg text{font-size:12px;fill:#d9e7f5}svg line{stroke:#6c8fac;stroke-width:2}svg circle{fill:#24658b;stroke:#c6dff0;stroke-width:2}
+#details{white-space:pre-wrap;font-size:13px;line-height:1.6;color:#cddbeb}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}main{padding:12px}}
+</style></head><body>
+<header><div><small>CALEB NAIBEI / FORENSIC ANALYSIS PORTFOLIO</small><h1>Digital transaction investigation workbench</h1><small>Case SIM-2026-002 · synthetic evidence · read-only browser analysis</small></div><div><label for="file">Load generated extended transactions.csv</label><input id="file" type="file" accept=".csv,text/csv"></div></header>
+<main>
+<div class="notice"><b>Evidence boundary:</b> This is a fictional training case. Correlation, shared device labels, graph edges and high-value transfers do not prove fraud, actual loss or human identity. Generator scenario tags are not fraud ground truth.</div>
+<div class="grid"><div class="metric"><small>Transactions in view</small><strong id="count">—</strong></div><div class="metric"><small>Successful value (KES)</small><strong id="value">—</strong></div><div class="metric"><small>Distinct accounts in view</small><strong id="accounts">—</strong></div><div class="metric"><small>Failed transfers in view</small><strong id="failed">—</strong></div></div>
+<div class="controls"><div><label for="account">Account ID (sender or recipient)</label><input id="account" placeholder="e.g. AC0001"></div><div><label for="status">Status</label><select id="status"><option value="">All</option><option>SUCCESS</option><option>FAILED</option></select></div><div><label for="scenario">Scenario (training metadata)</label><select id="scenario"><option value="">All</option></select></div><button id="reset">Clear filters</button><button id="export">Export filtered CSV</button></div>
+<div class="layout"><section class="panel"><h2>Transaction relationships <small>(top 12 account pairs by successful value)</small></h2><svg id="network" viewBox="0 0 720 380" role="img" aria-label="Account transfer relationship network"></svg><small>Edge thickness represents aggregate successful value. Click a node to filter the table. This is not proof of beneficial ownership.</small></section><section class="panel"><h2>Activity by day</h2><svg id="bars" viewBox="0 0 640 300" role="img" aria-label="Daily transaction count chart"></svg><h2 style="margin-top:16px">Investigator notes</h2><div id="details">Select an account or load a dataset to review evidence.</div></section></div>
+<div class="panel" style="margin-top:16px"><h2>Transaction evidence register <small id="visible"></small></h2><div class="scroll"><table><thead><tr><th>ID</th><th>UTC timestamp</th><th>Sender</th><th>Recipient</th><th>KES</th><th>Status</th><th>Channel</th><th>Device</th><th>Training tag</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+<p class="muted">For the reproducible 2,440-row dataset, run <code>python src/generate_extended_dataset.py</code> and select <code>data/extended/transactions.csv</code> above. No upload occurs: the CSV is read locally in your browser. This workbench does not collect or transmit data.</p>
+</main>
+<script>
+"use strict";
+const fields=["transaction_id","timestamp_utc","sender_id","recipient_id","amount_kes","status","channel","session_device_id","scenario_tag"];
+let data=[];
+const $=id=>document.getElementById(id);
+function parseCSV(text){
+ const lines=text.replace(/\r/g,"").trim().split("\n");
+ if(!lines.length)return [];
+ const cols=lines.shift().split(",");
+ for(const f of fields.slice(0,8))if(!cols.includes(f))throw Error("Missing required column: "+f);
+ return lines.filter(Boolean).map(line=>{const v=line.split(",");const r={};cols.forEach((c,i)=>r[c]=v[i]||"");return r});
+}
+function sample(){
+ const base="2026-10-12T08:";
+ const entries=[["T001",6,"A100","A200",48000,"SUCCESS","D9"],["T002",8,"A100","A200",47000,"SUCCESS","D9"],["T003",10,"A200","A400",60000,"SUCCESS","D9"],["T004",11,"A200","A500",30000,"SUCCESS","D9"],["T005",13,"A400","A600",55000,"SUCCESS","D4"],["T006",14,"A500","A600",27000,"SUCCESS","D5"],["T007",15,"A100","A200",12000,"FAILED","D9"],["T008",22,"A300","A400",10000,"SUCCESS","D3"],["T009",22,"A300","A500",10000,"SUCCESS","D3"],["T010",22,"A300","A600",10000,"SUCCESS","D3"],["T011",25,"A700","A300",80000,"SUCCESS","D7"]];
+ return entries.map(x=>({transaction_id:x[0],timestamp_utc:base+String(x[1]).padStart(2,"0")+":00+00:00",sender_id:x[2],recipient_id:x[3],amount_kes:String(x[4]),status:x[5],channel:"APP",session_device_id:x[6],scenario_tag:"case_002"}));
+}
+function node(tag,attrs,text){
+ const el=document.createElementNS("http://www.w3.org/2000/svg",tag);
+ Object.entries(attrs||{}).forEach(([k,v])=>el.setAttribute(k,String(v)));
+ if(text!==undefined)el.textContent=text;return el;
+}
+function filtered(){const a=$("account").value.trim().toUpperCase(),s=$("status").value,g=$("scenario").value;return data.filter(r=>(!a||r.sender_id===a||r.recipient_id===a)&&(!s||r.status===s)&&(!g||r.scenario_tag===g))}
+function render(){
+ const rows=filtered(),good=rows.filter(r=>r.status==="SUCCESS"),sum=good.reduce((s,r)=>s+Number(r.amount_kes),0);
+ $("count").textContent=rows.length.toLocaleString();$("value").textContent=sum.toLocaleString();
+ $("accounts").textContent=new Set(rows.flatMap(r=>[r.sender_id,r.recipient_id])).size;
+ $("failed").textContent=rows.length-good.length;$("visible").textContent="("+rows.length+" records)";
+ const tbody=$("rows");tbody.replaceChildren();
+ for(const r of rows.slice(0,250)){const tr=document.createElement("tr");for(const key of fields){const td=document.createElement("td");td.textContent=r[key]||"—";tr.appendChild(td)}tbody.appendChild(tr)}
+ const pairs=new Map();for(const r of good){const k=r.sender_id+"|"+r.recipient_id;pairs.set(k,(pairs.get(k)||0)+Number(r.amount_kes))}
+ const edges=[...pairs].sort((a,b)=>b[1]-a[1]).slice(0,12);
+ const names=[...new Set(edges.flatMap(([k])=>k.split("|")))].slice(0,16);
+ const svg=$("network");svg.replaceChildren();
+ const coords=new Map(names.map((n,i)=>[n,{x:360+260*Math.cos(2*Math.PI*i/Math.max(names.length,1)),y:190+145*Math.sin(2*Math.PI*i/Math.max(names.length,1))}]));
+ for(const [k,val] of edges){const [a,b]=k.split("|");if(!coords.has(a)||!coords.has(b))continue;const p=coords.get(a),q=coords.get(b);svg.appendChild(node("line",{x1:p.x,y1:p.y,x2:q.x,y2:q.y,"stroke-width":Math.min(9,1+val/35000)}))}
+ for(const [n,p] of coords){const g=node("g",{"tabindex":"0",role:"button","aria-label":"Filter account "+n});g.appendChild(node("circle",{cx:p.x,cy:p.y,r:20}));g.appendChild(node("text",{x:p.x,y:p.y+35,"text-anchor":"middle"},n));g.addEventListener("click",()=>{$("account").value=n;render()});g.addEventListener("keydown",e=>{if(e.key==="Enter"){$("account").value=n;render()}});svg.appendChild(g)}
+ const days=new Map();for(const r of rows){const d=r.timestamp_utc.slice(0,10);days.set(d,(days.get(d)||0)+1)}
+ const bars=$("bars");bars.replaceChildren();const sorted=[...days].sort(),max=Math.max(1,...sorted.map(x=>x[1]));
+ sorted.forEach(([day,count],i)=>{const w=550/Math.max(1,sorted.length),x=45+i*w,h=210*count/max;bars.appendChild(node("rect",{x,y:245-h,width:Math.max(8,w-8),height:h,fill:"#4e9ac7"}));bars.appendChild(node("text",{x:x+w/2,y:265,"text-anchor":"middle"},day.slice(5)));bars.appendChild(node("text",{x:x+w/2,y:235-h,"text-anchor":"middle"},count))});
+ const acct=$("account").value.trim().toUpperCase();
+ $("details").textContent=acct?("Account: "+acct+"\nIncoming successful KES: "+good.filter(r=>r.recipient_id===acct).reduce((s,r)=>s+Number(r.amount_kes),0).toLocaleString()+"\nOutgoing successful KES: "+good.filter(r=>r.sender_id===acct).reduce((s,r)=>s+Number(r.amount_kes),0).toLocaleString()+"\n\nValues describe visible transfers, not net balances or losses."):"Inspect a node to isolate an account. Use the status and scenario filters to compare failed transactions, ordinary background activity, and deliberately planted test patterns.";
+}
+function load(rows){data=rows;const scenarios=[...new Set(data.map(r=>r.scenario_tag).filter(Boolean))].sort();$("scenario").replaceChildren(new Option("All",""),...scenarios.map(s=>new Option(s,s)));render()}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{load(parseCSV(await f.text()))}catch(err){alert("Could not read CSV: "+err.message)}});
+["account","status","scenario"].forEach(id=>$(id).addEventListener(id==="account"?"input":"change",render));
+$("reset").addEventListener("click",()=>{$("account").value="";$("status").value="";$("scenario").value="";render()});
+$("export").addEventListener("click",()=>{const csv=[fields.join(","),...filtered().map(r=>fields.map(f=>r[f]||"").join(","))].join("\n")+"\n";const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="filtered_evidence.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+load(sample());
+</script></body></html>
