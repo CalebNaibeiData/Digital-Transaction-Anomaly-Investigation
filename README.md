@@ -13,7 +13,7 @@ A reproducible, evidence-led **simulation** of digital transaction investigation
 
 **Investigation workflow:** source generation → validation → SHA-256 manifest → SQL exhibits → authentication correlation → temporal transaction graph → timeline → evidence-linked case findings.
 
-**Read the detailed case study:** [SIM-2026-002 investigation](docs/CASE_002_INVESTIGATION.md).
+**Read the complete forensic report:** [Full forensic report, evidence matrix and timeline](docs/FULL_FORENSIC_REPORT_SIM-2026-002.md).\n\n**Inspect the exact synthetic datasets:** [Accounts](data/case_002/accounts.csv) · [Authentication events](data/case_002/auth_events.csv) · [Transactions](data/case_002/transactions.csv).\n\n**Short case study:** [SIM-2026-002 investigation](docs/CASE_002_INVESTIGATION.md).
 
 ## Run in VS Code (Python 3.9+; no external dependencies)
 ```bash
